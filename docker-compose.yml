@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: todos-postgres
+    environment:
+      POSTGRES_DB: todos-app
+      POSTGRES_USER: todos_user
+      POSTGRES_PASSWORD: todos_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todos_user -d todos-app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: todos-app
+    environment:
+      DATABASE_URL: jdbc:postgresql://todos-postgres:5432/todos-app
+      DATABASE_USERNAME: todos_user
+      DATABASE_PASSWORD: todos_password
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  test:
+    build:
+      context: .
+    command: ["./mvnw", "test", "-e"]
+    container_name: todos-test
+    environment:
+      DATABASE_URL: jdbc:postgresql://todos-postgres:5432/todos-app-test
+      DATABASE_USERNAME: todos_user
+      DATABASE_PASSWORD: todos_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

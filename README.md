@@ -49,6 +49,27 @@ Once you start the application, you can try out the endpoints by navigating to t
   - `DATABASE_USERNAME`
   - `DATABASE_PASSWORD`
 
+## Docker
+### Running the Application
+
+To run the application using Docker Compose, follow these steps:
+
+1. **Build and start the app**:
+   ```sh
+   docker-compose up app --build
+2. **Stop the app**:
+   ```sh
+   docker-compose down
+   ```
+### Testing 
+1. **Run the tests**:
+   ```sh
+   docker-compose up test --build
+   ```
+2. **Stop running the tests**:
+   ```sh
+   docker-compose down
+   ```
 **Tip**
 
 You can use [asdf](https://asdf-vm.com/) to run the application using specific java and maven versions.

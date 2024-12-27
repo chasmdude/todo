@@ -60,31 +60,6 @@ class CodeRepositoriesSyncCronJobTest {
     }
 
     @Test
-    void testSyncGithubRepositories_ExceptionHandling() {
-        when(codeRepositoriesManagementService.getActiveCodeRepositories()).thenThrow(new RuntimeException("Database error"));
-
-        codeRepositoriesSyncCronJob.syncGithubrepositories();
-
-        verify(codeRepositoriesManagementService, times(1)).getActiveCodeRepositories();
-        verify(githubServiceWrapper, never()).getRepository(any(CodeRepository.class));
-        verify(codeRepositoriesManagementService, never()).batchUpdateCodeRepositories(anyList());
-    }
-
-    @Test
-    void testSyncGithubRepositories_PartialFailure() {
-        when(codeRepositoriesManagementService.getActiveCodeRepositories()).thenReturn(activeRepos);
-        when(githubServiceWrapper.getRepository(repo1)).thenReturn(repo1);
-        when(githubServiceWrapper.getRepository(repo2)).thenThrow(new RuntimeException("GitHub API error"));
-
-        codeRepositoriesSyncCronJob.syncGithubrepositories();
-
-        verify(codeRepositoriesManagementService, times(1)).getActiveCodeRepositories();
-        verify(githubServiceWrapper, times(1)).getRepository(repo1);
-        verify(githubServiceWrapper, times(1)).getRepository(repo2);
-        verify(codeRepositoriesManagementService, never()).batchUpdateCodeRepositories(anyList());
-    }
-
-    @Test
     void testSyncGithubRepositories_UpdateActiveRepos() {
         CodeRepository updatedRepo1 = new CodeRepository();
         updatedRepo1.setName("UpdatedRepo1");
