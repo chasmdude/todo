@@ -23,9 +23,7 @@ public class CodeRepositoriesSyncCronJob {
         try {
             List<CodeRepository> activeRepos = this.codeRepositoriesManagementService.getActiveCodeRepositories();
 
-            for (CodeRepository codeRepository : activeRepos) {
-                codeRepository = this.githubServiceWrapper.getRepository(codeRepository);
-            }
+            activeRepos.replaceAll(codeRepository -> this.githubServiceWrapper.getRepository(codeRepository));
 
             this.codeRepositoriesManagementService.batchUpdateCodeRepositories(activeRepos);
 
