@@ -67,4 +67,21 @@ class TaskRepositoryTest {
         List<Task> tasks = taskRepository.findByOwner(newOwner);
         assertTrue(tasks.isEmpty());
     }
+
+    @Test
+    void testSaveTaskWithLongDescription() {
+        String longDescription = "Users have reported intermittent data loss when compressing large files (over 500MB) using the Pied Piper platform. This issue consistently affects files processed through the latest version of the compression algorithm. Upon decompression, the file should ideally restore fully, retaining its original quality without any data loss. However, certain files are missing critical data segments, impacting usability. Users expect a seamless experience with intact data, and any disruptions compromise file integrity and functionality.";
+
+        Task longDescriptionTask = new Task();
+        longDescriptionTask.setName("Task with Long Description");
+        longDescriptionTask.setOwner(owner);
+        longDescriptionTask.setPriority(TaskPriority.MEDIUM);
+        longDescriptionTask.setStatus(TaskStatus.PENDING);
+        longDescriptionTask.setDescription(longDescription);
+
+        taskRepository.save(longDescriptionTask);
+
+        Task retrievedTask = taskRepository.findById(longDescriptionTask.getId()).orElse(null);
+        assertEquals(longDescription, retrievedTask.getDescription(), "The task description should not be cropped.");
+    }
 }

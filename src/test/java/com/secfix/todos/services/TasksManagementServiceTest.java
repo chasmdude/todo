@@ -28,12 +28,6 @@ class TasksManagementServiceTest {
     @Mock
     private TaskRepository taskRepository;
 
-    @Mock
-    private UsersManagementService usersManagementService;
-
-    @Mock
-    private CodeRepositoriesManagementService codeRepositoriesManagementService;
-
     @InjectMocks
     private TasksManagementService tasksManagementService;
 
@@ -45,36 +39,39 @@ class TasksManagementServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        UserInfo owner = new UserInfo();
-        owner.setId(1);
-        task = new Task();
-        task.setId(1);
-        task.setName("Test Task");
-        task.setDescription("Test Description");
-        task.setPriority(TaskPriority.HIGH);
-        task.setStatus(TaskStatus.PENDING);
-        task.setOwner(owner);
+        try (AutoCloseable ignored =  MockitoAnnotations.openMocks(this)) {
+            UserInfo owner = new UserInfo();
+            owner.setId(1);
+            task = new Task();
+            task.setId(1);
+            task.setName("Test Task");
+            task.setDescription("Test Description");
+            task.setPriority(TaskPriority.HIGH);
+            task.setStatus(TaskStatus.PENDING);
+            task.setOwner(owner);
 
-        oldOwner = new UserInfo();
-        oldOwner.setId(1);
+            oldOwner = new UserInfo();
+            oldOwner.setId(1);
 
-        newOwner = new UserInfo();
-        newOwner.setId(2);
+            newOwner = new UserInfo();
+            newOwner.setId(2);
 
-        task1 = new Task();
-        task1.setId(1);
-        task1.setName("Task 1");
-        task1.setOwner(oldOwner);
-        task1.setPriority(TaskPriority.MEDIUM);
-        task1.setStatus(TaskStatus.PENDING);
+            task1 = new Task();
+            task1.setId(1);
+            task1.setName("Task 1");
+            task1.setOwner(oldOwner);
+            task1.setPriority(TaskPriority.MEDIUM);
+            task1.setStatus(TaskStatus.PENDING);
 
-        task2 = new Task();
-        task2.setId(2);
-        task2.setName("Task 2");
-        task2.setOwner(oldOwner);
-        task2.setPriority(TaskPriority.MEDIUM);
-        task2.setStatus(TaskStatus.PENDING);
+            task2 = new Task();
+            task2.setId(2);
+            task2.setName("Task 2");
+            task2.setOwner(oldOwner);
+            task2.setPriority(TaskPriority.MEDIUM);
+            task2.setStatus(TaskStatus.PENDING);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -111,5 +108,19 @@ class TasksManagementServiceTest {
         assertEquals(newOwner, task2.getOwner());
         verify(taskRepository, times(1)).findByOwner(oldOwner);
         verify(taskRepository, times(1)).saveAll(Arrays.asList(task1, task2));
+    }
+
+    @Test
+    public void testSaveTaskWithLongDescription() {
+        String longDescription = "Users have reported intermittent data loss when compressing large files (over 500MB) using the Pied Piper platform. This issue consistently affects files processed through the latest version of the compression algorithm. Upon decompression, the file should ideally restore fully, retaining its original quality without any data loss. However, certain files are missing critical data segments, impacting usability. Users expect a seamless experience with intact data, and any disruptions compromise file integrity and functionality.";
+
+        Task task = new Task();
+        task.setDescription(longDescription);
+
+        when(taskRepository.save(task)).thenReturn(task);
+
+        Task savedTask = taskRepository.save(task);
+
+        assertEquals(longDescription, savedTask.getDescription(), "The task description should not be cropped.");
     }
 }
