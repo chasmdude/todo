@@ -65,6 +65,20 @@ public class TasksManagementService {
         return new TaskDto(this.getTaskById(taskId));
     }
 
+    public List<Task> getTasksByOwner(UserInfo owner) {
+        return this.taskRepository.findByOwner(owner);
+    }
+
+    public void batchUpdateTaskOwner(UserInfo oldOwner, UserInfo newOwner) {
+        List<Task> tasks = this.getTasksByOwner(oldOwner);
+        tasks.forEach(task -> setTaskOwner(newOwner, task));
+        this.taskRepository.saveAll(tasks);
+    }
+
+    private static void setTaskOwner(UserInfo newOwner, Task task) {
+        task.setOwner(newOwner);
+    }
+
     public TaskDto createTask(TaskCreateRequest request) {
         logger.info("Create task started, Data: <{}>", request.toString());
         try {
@@ -102,7 +116,7 @@ public class TasksManagementService {
             Task task = this.getTaskById(taskId);
 
             if (request.getOwner() != null) {
-                task.setOwner(this.usersManagementService.getUserById(request.getOwner()));
+                setTaskOwner(this.usersManagementService.getUserById(request.getOwner()), task);
             }
 
             if (request.getCodeRepository() != null) {

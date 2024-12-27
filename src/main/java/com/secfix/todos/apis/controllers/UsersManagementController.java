@@ -3,7 +3,9 @@ package com.secfix.todos.apis.controllers;
 import com.secfix.todos.apis.dtos.UserDto;
 import com.secfix.todos.apis.dtos.requests.UserCreateRequest;
 import com.secfix.todos.apis.dtos.requests.UserUpdateRequest;
+import com.secfix.todos.database.models.UserInfo;
 import com.secfix.todos.exceptions.ApiServiceCallException;
+import com.secfix.todos.services.TasksManagementService;
 import com.secfix.todos.services.UsersManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,11 +29,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-
-
-
 
 
 @CrossOrigin
@@ -42,6 +41,8 @@ public class UsersManagementController {
 
     @Autowired
     private UsersManagementService usersManagementService;
+
+    private TasksManagementService tasksManagementService;
 
     @Operation(summary = "Get Users")
     @ApiResponses(value = {
@@ -124,17 +125,32 @@ public class UsersManagementController {
         }
     }
 
-    @Operation(summary = "Delete User with id")
+    @Operation(summary = "Delete User with id and reassign their tasks")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Returns nothing", content = {
+            @ApiResponse(responseCode = "200", description = "User deleted and tasks reassigned", content = {
                     @Content(mediaType = "application/json") }),
-            @ApiResponse(responseCode = "500", description = "An error has occurred ", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid new assignee or user id", content = @Content),
+            @ApiResponse(responseCode = "500", description = "An error has occurred", content = @Content)
     })
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteUser(HttpServletRequest request,
-            @Parameter(description = "User id") @PathVariable Integer userId) {
+                                        @Parameter(description = "User id of the user to delete") @PathVariable Integer userId,
+                                        @Parameter(description = "User id of the new assignee for tasks") @RequestParam Integer newAssigneeId) {
         try {
-            this.usersManagementService.deleteUser(userId);
+            // Fetch the user to be deleted and the new assignee
+            UserInfo userToDelete = usersManagementService.getUserById(userId);
+            UserInfo newAssignee = usersManagementService.getUserById(newAssigneeId);
+
+            // Check if both users are valid
+            if (userToDelete == null || newAssignee == null) {
+                return new ResponseEntity<>("Invalid user or assignee", HttpStatus.BAD_REQUEST);
+            }
+
+            // Reassign tasks of the user to be deleted to the new assignee
+            tasksManagementService.batchUpdateTaskOwner(userToDelete, newAssignee);
+
+            // Delete the user
+            usersManagementService.deleteUser(userId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (ApiServiceCallException apiex) {
             return new ResponseEntity<>(apiex.getMessage(), apiex.getHttpStatus());
